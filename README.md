@@ -9,10 +9,10 @@
 - PLUS: Si es posible obtener mas información/metadata por cada contenido
 
 ## VERSIONES:
-Python: 3.7.4
-Pymongo: 4.6.2
-Selenium: 4.11.2
-BS4: 0.0.2
-Pandas: 1.2.3
+- Python: 3.7.4
+- Pymongo: 4.6.2
+- Selenium: 4.11.2
+- BS4: 0.0.2
+- Pandas: 1.2.3
 
 MongoDB is localhost.
