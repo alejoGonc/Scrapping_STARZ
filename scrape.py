@@ -5,10 +5,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 import pandas as pd
-import concurrent.futures
 import time
 from selenium.common.exceptions import NoSuchElementException 
-import pymongo
 from pymongo import MongoClient
 
 
@@ -27,49 +25,54 @@ movies_links = driver.find_elements(By.CLASS_NAME, "StandardSlide_img-container_
 movies = []
 
 
-# for movie in movies_links:
-#     href = movie.get_attribute("href")
-#     if href not in movies:
-#         movies.append(href)
+for movie in movies_links:
+    href = movie.get_attribute("href")
+    if href not in movies:
+        movies.append(href)
 
-# movies_dataset = []
+movies_dataset = []
 
-# for link in movies[:2]:
-#     driver.get(link)
-#     time.sleep(5)
+for link in movies:
+    driver.get(link)
+    time.sleep(5)
 
-#     try:
+    try:
 
-#         movie_name = driver.find_element(By.XPATH, "//div/h1").text
-#         movie_rating = driver.find_element(By.XPATH, "//div/span[1]").text
-#         movie_duration = driver.find_element(By.XPATH, "//div/span[2]").text
-#         movie_category = driver.find_element(By.XPATH, "//div/span[3]").text
-#         movie_year = driver.find_element(By.XPATH, "//div/span[4]").text
-#         movie_cast = driver.find_element(By.XPATH, "//p[@class='important-cast text-center text-xl-left pb-0 m-0 on-surface-1-variant-1']").text[9:]
+        movie_name = driver.find_element(By.XPATH, "//div/h1").text
+        movie_rating = driver.find_element(By.XPATH, "//div/span[1]").text
+        movie_duration = driver.find_element(By.XPATH, "//div/span[2]").text
+        movie_category = driver.find_element(By.XPATH, "//div/span[3]").text
+        movie_year = driver.find_element(By.XPATH, "//div/span[4]").text
+        movie_cast = driver.find_element(By.XPATH, "//p[@class='important-cast text-center text-xl-left pb-0 m-0 on-surface-1-variant-1']").text[9:]
 
-#         try:
-#             synopsis_button = driver.find_element(By.XPATH, "//p/button")
-#             synopsis_button.click()
-#             time.sleep(2)
-#             movie_synopsis = driver.find_element(By.XPATH, "//div/p[@class='on-surface-1 text-center mt-2 mb-1 mx-2']").text
-#         except:
-#             pass
+        try:
+            synopsis_button = driver.find_element(By.XPATH, "//p/button")
+            synopsis_button.click()
+            time.sleep(2)
+        except:
+            pass
 
-#         movies_dataset.append(
-#             {"Name":movie_name,
-#              "Rating":movie_rating,
-#              "Duration":movie_duration,
-#              "Category":movie_category,
-#              "Year":movie_year,
-#              "Cast":movie_cast,
-#              "Synopsis":movie_synopsis,
-#              "Link":link
-#             }
-#         )
+        try:
+            movie_synopsis = driver.find_element(By.XPATH, "//div/p[@class='on-surface-1 text-center mt-2 mb-1 mx-2']").text   
+        except NoSuchElementException:
+            movie_synopsis = driver.find_element(By.XPATH, "//div/p/span[@class='p on-surface-1-variant-1']").text
+             
 
-#     except NoSuchElementException:
+        movies_dataset.append(
+            {"Name":movie_name,
+             "Rating":movie_rating,
+             "Duration":movie_duration,
+             "Category":movie_category,
+             "Year":movie_year,
+             "Cast":movie_cast,
+             "Synopsis":movie_synopsis,
+             "Link":link
+            }
+        )
 
-#         print("Element not found in:", link)
+    except NoSuchElementException:
+
+        print("Element not found in:", link)
 
 
 series_url = 'https://www.starz.com/us/en/series'
@@ -91,7 +94,7 @@ series_dataset = []
 season_dataset = []
 episodes_dataset = []
 
-for series_link in series_list[:3]:
+for series_link in series_list:
     driver.get(series_link)
     time.sleep(5)
 
@@ -171,22 +174,27 @@ for series_link in series_list[:3]:
 
 episodes_df = pd.DataFrame(episodes_dataset)
 seasons_df = pd.DataFrame(season_dataset)
-# movies_df = pd.DataFrame(movies_dataset)
+movies_df = pd.DataFrame(movies_dataset)
 
-# print(episodes_df)
-
-records = episodes_df.to_dict(orient='records')
-
-URI = 'mongodb+srv://Alejo:Test1234@test.v3j3n9l.mongodb.net/?retryWrites=true&w=majority&appName=Test'
-client = MongoClient(URI)
+episodes_df.to_csv('episodes.csv')
+movies_df.to_csv('movies.csv')
+seasons_df.to_csv('seasons.csv')
 
 
+records_episodes = episodes_df.to_dict(orient='records')
+records_seasons = seasons_df.to_dict(orient='records')
+records_movies = movies_df.to_dict(orient='records')
 
-db = client['Test'] 
-collection = db['Test']
+client = MongoClient('mongodb://localhost:27017/')
 
-collection.insert_many(records)
+db = client['admin'] 
+collection_movies = db['Movies']
+collection_seasons = db['Seasons']
+collection_episodes = db['Episodes']
 
+collection_episodes.insert_many(records_episodes)
+collection_seasons.insert_many(records_seasons)
+collection_movies.insert_many(records_movies)
 
 driver.quit()
 
