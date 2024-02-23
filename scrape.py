@@ -4,9 +4,12 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+import pandas as pd
 import concurrent.futures
 import time
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException 
+import pymongo
+from pymongo import MongoClient
 
 
 service = Service(ChromeDriverManager().install())
@@ -86,8 +89,9 @@ for series in series_links:
 
 series_dataset = []
 season_dataset = []
+episodes_dataset = []
 
-for series_link in series_list[:4]:
+for series_link in series_list[:3]:
     driver.get(series_link)
     time.sleep(5)
 
@@ -142,12 +146,46 @@ for series_link in series_list[:4]:
                 "Link": season
             })
 
+            episode_containers = driver.find_elements(By.XPATH,"//div[@class='EpisodeCard_slide__WdptO col-xs-12 col-sm-6 col-md-4 col-xl-4']")
+
+            for episode in episode_containers:
+                try:
+                    episode_name = episode.find_element(By.XPATH, ".//div[@class='EpisodeCard_detail-container__vXjLd']/button").text
+                    episode_description = episode.find_element(By.XPATH, ".//span[@class='slide-description p on-surface-1']").text
+                    episode_metadata = episode.find_element(By.XPATH,".//div[@class='EpisodeCard_slide-details__esa7g on-surface-1-variant-1 metadata-copy small']").text.split(' | ')
+
+                    episodes_dataset.append({
+                        "Episode": episode_name,
+                        "Description": episode_description,
+                        "Duration":episode_metadata[1],
+                        "Year":episode_metadata[2],
+                        "Series":series_name
+                    })
+                except:
+                    pass
+
+                
+
     except NoSuchElementException:
          print("Element not found in:", series_link)
 
-# for season_data in season_dataset:
-#     print(season_data)
+episodes_df = pd.DataFrame(episodes_dataset)
+seasons_df = pd.DataFrame(season_dataset)
+# movies_df = pd.DataFrame(movies_dataset)
 
+# print(episodes_df)
+
+records = episodes_df.to_dict(orient='records')
+
+URI = 'mongodb+srv://Alejo:Test1234@test.v3j3n9l.mongodb.net/?retryWrites=true&w=majority&appName=Test'
+client = MongoClient(URI)
+
+
+
+db = client['Test'] 
+collection = db['Test']
+
+collection.insert_many(records)
 
 
 driver.quit()
