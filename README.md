@@ -1,4 +1,4 @@
-# Scrapping_STARZ
+# Scraping_STARZ
 
 ## Enunciado:
 - Obtener todas las películas y series.
